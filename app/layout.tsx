@@ -1,31 +1,47 @@
-import type { Metadata, Viewport } from "next"
-import { Inter, Space_Grotesk } from "next/font/google"
-import { Analytics } from "@vercel/analytics/next"
-import { Toaster } from "sonner"
-import { SiteHeader } from "@/components/site-header"
-import { SiteFooter } from "@/components/site-footer"
-import "./globals.css"
+import type { Metadata, Viewport } from 'next'
+import { Inter, Space_Grotesk } from 'next/font/google'
+import { Analytics } from '@vercel/analytics/next'
+import { Toaster } from 'sonner'
+import './globals.css'
 
-const _inter = Inter({ subsets: ["latin"], variable: "--font-inter" })
-const _grotesk = Space_Grotesk({ subsets: ["latin"], variable: "--font-grotesk" })
+const inter = Inter({ 
+  subsets: ["latin"],
+  variable: '--font-inter',
+})
+
+const spaceGrotesk = Space_Grotesk({ 
+  subsets: ["latin"],
+  variable: '--font-space-grotesk',
+})
 
 export const metadata: Metadata = {
-  title: "Cherry Twins | Streetwear Independiente",
-  description:
-    "Streetwear independiente con identidad propia. Piezas limitadas que cuentan historias. Hoodies, playeras, accesorios y mas.",
-  icons: {
-    icon: [
-      { url: "/icon-light-32x32.png", media: "(prefers-color-scheme: light)" },
-      { url: "/icon-dark-32x32.png", media: "(prefers-color-scheme: dark)" },
-      { url: "/icon.svg", type: "image/svg+xml" },
-    ],
-    apple: "/apple-icon.png",
+  title: {
+    default: 'Cherry Twins | Premium Streetwear',
+    template: '%s | Cherry Twins',
+  },
+  description: 'Discover exclusive streetwear pieces and artist collaborations at Cherry Twins. Premium quality, bold designs.',
+  keywords: ['streetwear', 'fashion', 'clothing', 'premium', 'urban fashion', 'artist collaborations'],
+  authors: [{ name: 'Cherry Twins' }],
+  openGraph: {
+    title: 'Cherry Twins | Premium Streetwear',
+    description: 'Discover exclusive streetwear pieces and artist collaborations.',
+    type: 'website',
+    locale: 'en_US',
+    siteName: 'Cherry Twins',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Cherry Twins | Premium Streetwear',
+    description: 'Discover exclusive streetwear pieces and artist collaborations.',
   },
 }
 
 export const viewport: Viewport = {
-  themeColor: "#0a0a0a",
-  width: "device-width",
+  themeColor: [
+    { media: '(prefers-color-scheme: light)', color: '#fafafa' },
+    { media: '(prefers-color-scheme: dark)', color: '#1a1a1a' },
+  ],
+  width: 'device-width',
   initialScale: 1,
 }
 
@@ -35,17 +51,10 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="es" className="dark">
-      <body className="font-sans antialiased bg-background text-foreground">
-        <SiteHeader />
-        <main className="min-h-screen">{children}</main>
-        <SiteFooter />
-        <Toaster
-          position="bottom-right"
-          toastOptions={{
-            style: { background: "#111111", color: "#fafafa", borderColor: "#262626" },
-          }}
-        />
+    <html lang="en" className={`${inter.variable} ${spaceGrotesk.variable}`}>
+      <body className="font-sans antialiased min-h-screen bg-background text-foreground">
+        {children}
+        <Toaster position="bottom-right" richColors />
         <Analytics />
       </body>
     </html>
