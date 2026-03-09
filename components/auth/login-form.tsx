@@ -6,15 +6,43 @@ import { useState } from "react"
 export function LoginForm() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
+  const [error, setError] = useState("")
+  const [loading, setLoading] = useState(false)
 
-  function handleSubmit(e: React.FormEvent) {
-    e.preventDefault()
+  async function handleSubmit(e: React.FormEvent) {
+  e.preventDefault()
+  setError("")
 
-    console.log("Login intent:", {
-      email,
-      password,
+  try {
+    setLoading(true)
+
+    const res = await fetch("https://store-cherrys.onrender.com/api/auth/login", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        email,
+        password,
+      }),
     })
+
+    const data = await res.json()
+
+    if (!res.ok) {
+      setError(data.message || data.error || "Correo o contraseña incorrectos.")
+      return
+    }
+
+    localStorage.setItem("token", data.token)
+    window.location.href = "/account"
+  } catch (err) {
+    console.error("Login error:", err)
+    setError("No se pudo conectar con el servidor.")
+  } finally {
+    setLoading(false)
   }
+}
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-4">
@@ -36,11 +64,14 @@ export function LoginForm() {
         className="p-3 rounded bg-neutral-800 border border-neutral-700"
       />
 
+      {error && <p className="text-sm text-red-400">{error}</p>}
+
       <button
         type="submit"
-        className="bg-white text-black font-semibold p-3 rounded hover:opacity-90"
+        disabled={loading}
+        className="bg-white text-black font-semibold p-3 rounded hover:opacity-90 disabled:opacity-60"
       >
-        Iniciar sesión
+        {loading ? "Ingresando..." : "Iniciar sesión"}
       </button>
 
       <p className="text-sm text-neutral-400 text-center">
