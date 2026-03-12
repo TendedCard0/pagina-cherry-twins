@@ -4,6 +4,7 @@ import { Analytics } from "@vercel/analytics/next"
 import { Toaster } from "sonner"
 import { SiteHeader } from "@/components/site-header"
 import { SiteFooter } from "@/components/site-footer"
+import { AuthProvider } from "@/context/auth-context"
 import "./globals.css"
 
 const _inter = Inter({ subsets: ["latin"], variable: "--font-inter" })
@@ -37,16 +38,18 @@ export default function RootLayout({
   return (
     <html lang="es" className="dark">
       <body className="font-sans antialiased bg-background text-foreground">
-        <SiteHeader />
-        <main className="min-h-screen">{children}</main>
-        <SiteFooter />
-        <Toaster
-          position="bottom-right"
-          toastOptions={{
-            style: { background: "#111111", color: "#fafafa", borderColor: "#262626" },
-          }}
-        />
-        <Analytics />
+        <AuthProvider>
+          <SiteHeader />
+          <main className="min-h-screen">{children}</main>
+          <SiteFooter />
+          <Toaster
+            position="bottom-right"
+            toastOptions={{
+              style: { background: "#111111", color: "#fafafa", borderColor: "#262626" },
+            }}
+          />
+          <Analytics />
+        </AuthProvider>
       </body>
     </html>
   )

@@ -1,9 +1,19 @@
 "use client"
 
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { useState } from "react"
+import { useAuth } from "@/context/auth-context"
+
+type AuthResponse = {
+  token: string
+  tokenType: string
+}
 
 export function RegisterForm() {
+  const router = useRouter()
+  const { completeAuth } = useAuth()
+
   const [fullName, setFullName] = useState("")
   const [email, setEmail] = useState("")
   const [phone, setPhone] = useState("")
@@ -13,46 +23,55 @@ export function RegisterForm() {
   const [loading, setLoading] = useState(false)
 
   async function handleSubmit(e: React.FormEvent) {
-  e.preventDefault()
-  setError("")
+    e.preventDefault()
+    setError("")
 
-  if (password !== confirmPassword) {
-    setError("Las contraseñas no coinciden.")
-    return
-  }
-
-  try {
-    setLoading(true)
-
-    const res = await fetch("https://store-cherrys.onrender.com/api/auth/register", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        fullName: fullName,
-        email,
-        phone,
-        password,
-      }),
-    })
-
-    const data = await res.json()
-
-    if (!res.ok) {
-      setError(data.message || data.error || "Error al registrar usuario.")
+    if (password !== confirmPassword) {
+      setError("Las contraseñas no coinciden.")
       return
     }
 
-    localStorage.setItem("token", data.token)
-    window.location.href = "/account"
-  } catch (err) {
-    console.error("Register error:", err)
-    setError("No se pudo conectar con el servidor.")
-  } finally {
-    setLoading(false)
+    try {
+      setLoading(true)
+
+      const res = await fetch("https://store-cherrys.onrender.com/api/auth/register", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email,
+          password,
+          fullName,
+          phone,
+        }),
+      })
+
+      const data = (await res.json()) as Partial<AuthResponse> & { message?: string }
+
+      if (!res.ok) {
+        setError(data.message || "Error al registrar usuario.")
+        return
+      }
+
+      if (!data.token) {
+        setError("La API no devolvió un token válido.")
+        return
+      }
+
+      await completeAuth({
+        token: data.token,
+        tokenType: data.tokenType || "Bearer",
+      })
+
+      router.push("/account")
+    } catch (err) {
+      console.error("Register error:", err)
+      setError("No se pudo registrar el usuario.")
+    } finally {
+      setLoading(false)
+    }
   }
-}
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-4">

@@ -1,48 +1,67 @@
 "use client"
 
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { useState } from "react"
+import { useAuth } from "@/context/auth-context"
+
+type AuthResponse = {
+  token: string
+  tokenType: string
+}
 
 export function LoginForm() {
+  const router = useRouter()
+  const { completeAuth } = useAuth()
+
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [error, setError] = useState("")
   const [loading, setLoading] = useState(false)
 
   async function handleSubmit(e: React.FormEvent) {
-  e.preventDefault()
-  setError("")
+    e.preventDefault()
+    setError("")
 
-  try {
-    setLoading(true)
+    try {
+      setLoading(true)
 
-    const res = await fetch("https://store-cherrys.onrender.com/api/auth/login", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        email,
-        password,
-      }),
-    })
+      const res = await fetch("https://store-cherrys.onrender.com/api/auth/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email,
+          password,
+        }),
+      })
 
-    const data = await res.json()
+      const data = (await res.json()) as Partial<AuthResponse> & { message?: string }
 
-    if (!res.ok) {
-      setError(data.message || data.error || "Correo o contraseña incorrectos.")
-      return
+      if (!res.ok) {
+        setError(data.message || "Correo o contraseña incorrectos.")
+        return
+      }
+
+      if (!data.token) {
+        setError("La API no devolvió un token válido.")
+        return
+      }
+
+      await completeAuth({
+        token: data.token,
+        tokenType: data.tokenType || "Bearer",
+      })
+
+      router.push("/account")
+    } catch (err) {
+      console.error("Login error:", err)
+      setError("No se pudo iniciar sesión.")
+    } finally {
+      setLoading(false)
     }
-
-    localStorage.setItem("token", data.token)
-    window.location.href = "/account"
-  } catch (err) {
-    console.error("Login error:", err)
-    setError("No se pudo conectar con el servidor.")
-  } finally {
-    setLoading(false)
   }
-}
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-4">
