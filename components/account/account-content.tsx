@@ -1,148 +1,141 @@
 "use client"
 
-import { useState } from "react"
-import { User, Package, MapPin, Plus, Pencil, Trash2 } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Badge } from "@/components/ui/badge"
-import { Separator } from "@/components/ui/separator"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbList,
-  BreadcrumbPage,
-  BreadcrumbSeparator,
-} from "@/components/ui/breadcrumb"
-
-const mockOrders = [
-  { id: "CT-54321", date: "2026-02-20", total: 2098, status: "Entregado", items: 2 },
-  { id: "CT-54290", date: "2026-02-10", total: 1299, status: "Enviado", items: 1 },
-  { id: "CT-54188", date: "2026-01-28", total: 3147, status: "Pendiente", items: 3 },
-]
-
-const mockAddresses = [
-  { id: "1", label: "Casa", street: "Av. Reforma 123, Col. Centro", city: "CDMX", cp: "06600" },
-  { id: "2", label: "Oficina", street: "Insurgentes Sur 456, Col. Roma", city: "CDMX", cp: "06700" },
-]
-
-const statusColors: Record<string, string> = {
-  Pendiente: "bg-yellow-500/20 text-yellow-400 border-yellow-500/30",
-  Pagado: "bg-blue-500/20 text-blue-400 border-blue-500/30",
-  Enviado: "bg-primary/20 text-primary border-primary/30",
-  Entregado: "bg-green-500/20 text-green-400 border-green-500/30",
-}
+import { useEffect } from "react"
+import { useRouter } from "next/navigation"
+import { useAuth } from "@/context/auth-context"
 
 export function AccountContent() {
-  const [tab, setTab] = useState("orders")
+  const router = useRouter()
+  const { user, isAuthenticated, isLoading, logout } = useAuth()
+
+  useEffect(() => {
+    if (!isLoading && !isAuthenticated) {
+      router.replace("/login")
+    }
+  }, [isAuthenticated, isLoading, router])
+
+  function handleLogout() {
+    logout()
+    router.push("/login")
+  }
+
+  if (isLoading) {
+    return (
+      <section className="px-6 py-16 text-white">
+        <div className="mx-auto max-w-4xl rounded-2xl border border-neutral-800 bg-neutral-900 p-6">
+          <p className="text-neutral-300">Cargando tu sesión...</p>
+        </div>
+      </section>
+    )
+  }
+
+  if (!isAuthenticated || !user) {
+    return null
+  }
+
+  const createdAt = new Date(user.createdAt).toLocaleDateString("es-MX", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  })
 
   return (
-    <div className="mx-auto max-w-4xl px-4 py-8 lg:px-8">
-      <Breadcrumb className="mb-8">
-        <BreadcrumbList>
-          <BreadcrumbItem>
-            <BreadcrumbLink href="/" className="text-muted-foreground hover:text-foreground">Home</BreadcrumbLink>
-          </BreadcrumbItem>
-          <BreadcrumbSeparator className="text-muted-foreground" />
-          <BreadcrumbItem>
-            <BreadcrumbPage className="text-foreground">Mi Cuenta</BreadcrumbPage>
-          </BreadcrumbItem>
-        </BreadcrumbList>
-      </Breadcrumb>
+    <section className="px-6 py-16 text-white">
+      <div className="mx-auto max-w-4xl">
+        <div className="mb-8">
+          <p className="text-sm text-neutral-400">Home &gt; Mi Cuenta</p>
+          <h1 className="mt-3 text-4xl font-bold">Mi Cuenta</h1>
+          <p className="mt-2 text-neutral-400">
+            Aquí puedes ver la información real de tu sesión.
+          </p>
+        </div>
 
-      <h1 className="mb-8 text-3xl font-bold tracking-tight text-foreground">Mi Cuenta</h1>
+        <div className="grid gap-6 md:grid-cols-[1.4fr_0.8fr]">
+          <div className="rounded-2xl border border-neutral-800 bg-neutral-900 p-6">
+            <h2 className="mb-5 text-2xl font-semibold">Perfil</h2>
 
-      <Tabs value={tab} onValueChange={setTab}>
-        <TabsList className="mb-8 bg-secondary border border-border">
-          <TabsTrigger value="profile" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-muted-foreground">
-            <User className="mr-2 h-4 w-4" />
-            Perfil
-          </TabsTrigger>
-          <TabsTrigger value="orders" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-muted-foreground">
-            <Package className="mr-2 h-4 w-4" />
-            Pedidos
-          </TabsTrigger>
-          <TabsTrigger value="addresses" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-muted-foreground">
-            <MapPin className="mr-2 h-4 w-4" />
-            Direcciones
-          </TabsTrigger>
-        </TabsList>
-
-        {/* Profile */}
-        <TabsContent value="profile">
-          <div className="rounded-lg border border-border bg-card p-6">
-            <h2 className="mb-6 text-lg font-semibold text-foreground">Datos personales</h2>
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <div className="flex flex-col gap-2">
-                <Label className="text-foreground">Nombre</Label>
-                <Input defaultValue="Juan Perez" className="bg-secondary text-foreground border-border" />
+            <div className="space-y-5">
+              <div>
+                <p className="text-sm text-neutral-400">Nombre completo</p>
+                <p className="mt-1 text-lg">{user.fullName || "No registrado"}</p>
               </div>
-              <div className="flex flex-col gap-2">
-                <Label className="text-foreground">Correo</Label>
-                <Input defaultValue="juan@email.com" className="bg-secondary text-foreground border-border" readOnly />
+
+              <div>
+                <p className="text-sm text-neutral-400">Correo electrónico</p>
+                <p className="mt-1 text-lg">{user.email}</p>
               </div>
-              <div className="flex flex-col gap-2">
-                <Label className="text-foreground">Telefono</Label>
-                <Input defaultValue="+52 55 1234 5678" className="bg-secondary text-foreground border-border" />
+
+              <div>
+                <p className="text-sm text-neutral-400">Teléfono</p>
+                <p className="mt-1 text-lg">{user.phone || "No registrado"}</p>
+              </div>
+
+              <div>
+                <p className="text-sm text-neutral-400">Fecha de registro</p>
+                <p className="mt-1 text-lg">{createdAt}</p>
               </div>
             </div>
-            <Button className="mt-6 bg-primary text-primary-foreground hover:bg-primary/90">Guardar cambios</Button>
           </div>
-        </TabsContent>
 
-        {/* Orders */}
-        <TabsContent value="orders">
-          <div className="flex flex-col gap-4">
-            {mockOrders.map((order) => (
-              <div key={order.id} className="flex flex-col gap-3 rounded-lg border border-border bg-card p-6 sm:flex-row sm:items-center sm:justify-between">
-                <div className="flex flex-col gap-1">
-                  <div className="flex items-center gap-3">
-                    <span className="text-sm font-semibold text-foreground">Orden #{order.id}</span>
-                    <Badge variant="outline" className={statusColors[order.status]}>
-                      {order.status}
-                    </Badge>
-                  </div>
-                  <p className="text-xs text-muted-foreground">
-                    {order.date} | {order.items} producto{order.items > 1 ? "s" : ""} | ${order.total.toLocaleString("es-MX")} MXN
-                  </p>
-                </div>
-                <Button variant="outline" size="sm" className="border-border text-foreground hover:bg-secondary w-fit">
-                  Ver detalle
-                </Button>
-              </div>
-            ))}
-          </div>
-        </TabsContent>
+          <div className="rounded-2xl border border-neutral-800 bg-neutral-900 p-6">
+            <h2 className="mb-5 text-2xl font-semibold">Estado</h2>
 
-        {/* Addresses */}
-        <TabsContent value="addresses">
-          <div className="flex flex-col gap-4">
-            {mockAddresses.map((addr) => (
-              <div key={addr.id} className="flex items-start justify-between rounded-lg border border-border bg-card p-6">
-                <div>
-                  <span className="text-sm font-semibold text-foreground">{addr.label}</span>
-                  <p className="mt-1 text-sm text-muted-foreground">{addr.street}</p>
-                  <p className="text-sm text-muted-foreground">{addr.city}, CP {addr.cp}</p>
-                </div>
-                <div className="flex gap-2">
-                  <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground">
-                    <Pencil className="h-4 w-4" />
-                  </Button>
-                  <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-destructive">
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
+            <div className="space-y-4">
+              <div>
+                <p className="text-sm text-neutral-400">Rol</p>
+                <p className="mt-1 inline-flex rounded-full border border-neutral-700 px-3 py-1 text-sm">
+                  {user.role}
+                </p>
               </div>
-            ))}
-            <Button variant="outline" className="w-fit border-border text-foreground hover:bg-secondary">
-              <Plus className="mr-2 h-4 w-4" />
-              Agregar direccion
-            </Button>
+
+              <div>
+                <p className="text-sm text-neutral-400">Cuenta activa</p>
+                <p className="mt-1">
+                  <span
+                    className={`inline-flex rounded-full px-3 py-1 text-sm ${
+                      user.active
+                        ? "bg-green-500/15 text-green-400"
+                        : "bg-red-500/15 text-red-400"
+                    }`}
+                  >
+                    {user.active ? "Activa" : "Inactiva"}
+                  </span>
+                </p>
+              </div>
+
+              <div>
+                <p className="text-sm text-neutral-400">Correo verificado</p>
+                <p className="mt-1">
+                  <span
+                    className={`inline-flex rounded-full px-3 py-1 text-sm ${
+                      user.emailVerified
+                        ? "bg-green-500/15 text-green-400"
+                        : "bg-yellow-500/15 text-yellow-400"
+                    }`}
+                  >
+                    {user.emailVerified ? "Verificado" : "Pendiente"}
+                  </span>
+                </p>
+              </div>
+            </div>
+
+            <button
+              onClick={handleLogout}
+              className="mt-8 w-full rounded-lg bg-white px-4 py-3 font-semibold text-black transition hover:opacity-90"
+            >
+              Cerrar sesión
+            </button>
           </div>
-        </TabsContent>
-      </Tabs>
-    </div>
+        </div>
+
+        <div className="mt-6 rounded-2xl border border-neutral-800 bg-neutral-900 p-6">
+          <h2 className="mb-3 text-2xl font-semibold">Siguientes módulos</h2>
+          <p className="text-neutral-400">
+            Aquí después podemos conectar pedidos, direcciones y edición de perfil
+            usando los endpoints ya existentes del backend.
+          </p>
+        </div>
+      </div>
+    </section>
   )
 }
