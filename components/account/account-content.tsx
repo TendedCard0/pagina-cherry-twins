@@ -488,13 +488,7 @@ export function AccountContent() {
               </div>
             </div>
 
-            <div className="mt-6 rounded-2xl border border-neutral-800 bg-neutral-900 p-6">
-              <h2 className="mb-3 text-2xl font-semibold">Siguientes módulos</h2>
-              <p className="text-neutral-400">
-                Perfil y direcciones ya están conectados a backend. La pestaña de
-                pedidos también ya quedó lista para consumir la API real.
-              </p>
-            </div>
+            
           </>
         )}
 
