@@ -1,11 +1,22 @@
 "use client"
 
 import { useSyncExternalStore, useCallback } from "react"
-import type { Product, CartItem } from "./data"
+
+export type CartLine = {
+  variantId: number
+  productId: number
+  slug: string
+  name: string
+  imageUrl: string | null
+  variantLabel: string
+  unitPriceCents: number
+  currency: string
+  quantity: number
+}
 
 type CartListener = () => void
 
-let cartItems: CartItem[] = []
+let cartLines: CartLine[] = []
 let listeners: CartListener[] = []
 
 function emitChange() {
@@ -21,69 +32,69 @@ function subscribe(listener: CartListener) {
   }
 }
 
-function getSnapshot(): CartItem[] {
-  return cartItems
+function getSnapshot(): CartLine[] {
+  return cartLines
 }
 
-export function addToCart(product: Product, quantity: number, selectedSize: string, selectedColor: string) {
-  const existingIndex = cartItems.findIndex(
-    (item) => item.product.id === product.id && item.selectedSize === selectedSize && item.selectedColor === selectedColor
-  )
+export function addCartLine(line: Omit<CartLine, "quantity"> & { quantity?: number }) {
+  const quantity = line.quantity ?? 1
+  const existingIndex = cartLines.findIndex((l) => l.variantId === line.variantId)
   if (existingIndex >= 0) {
-    cartItems = cartItems.map((item, index) =>
-      index === existingIndex ? { ...item, quantity: item.quantity + quantity } : item
+    cartLines = cartLines.map((l, i) =>
+      i === existingIndex ? { ...l, quantity: l.quantity + quantity } : l
     )
   } else {
-    cartItems = [...cartItems, { product, quantity, selectedSize, selectedColor }]
+    cartLines = [
+      ...cartLines,
+      {
+        variantId: line.variantId,
+        productId: line.productId,
+        slug: line.slug,
+        name: line.name,
+        imageUrl: line.imageUrl,
+        variantLabel: line.variantLabel,
+        unitPriceCents: line.unitPriceCents,
+        currency: line.currency,
+        quantity,
+      },
+    ]
   }
   emitChange()
 }
 
-export function removeFromCart(productId: string, selectedSize: string, selectedColor: string) {
-  cartItems = cartItems.filter(
-    (item) => !(item.product.id === productId && item.selectedSize === selectedSize && item.selectedColor === selectedColor)
-  )
+export function removeCartLine(variantId: number) {
+  cartLines = cartLines.filter((l) => l.variantId !== variantId)
   emitChange()
 }
 
-export function updateCartQuantity(productId: string, selectedSize: string, selectedColor: string, quantity: number) {
+export function updateCartLineQuantity(variantId: number, quantity: number) {
   if (quantity <= 0) {
-    removeFromCart(productId, selectedSize, selectedColor)
+    removeCartLine(variantId)
     return
   }
-  cartItems = cartItems.map((item) =>
-    item.product.id === productId && item.selectedSize === selectedSize && item.selectedColor === selectedColor
-      ? { ...item, quantity }
-      : item
+  cartLines = cartLines.map((l) =>
+    l.variantId === variantId ? { ...l, quantity } : l
   )
   emitChange()
 }
 
 export function clearCart() {
-  cartItems = []
+  cartLines = []
   emitChange()
-}
-
-export function getCartTotal(): number {
-  return cartItems.reduce((total, item) => total + item.product.price * item.quantity, 0)
-}
-
-export function getCartCount(): number {
-  return cartItems.reduce((count, item) => count + item.quantity, 0)
 }
 
 export function useCart() {
   const items = useSyncExternalStore(subscribe, getSnapshot, getSnapshot)
-  const total = items.reduce((t, item) => t + item.product.price * item.quantity, 0)
-  const count = items.reduce((c, item) => c + item.quantity, 0)
+  const total = items.reduce((t, l) => t + l.unitPriceCents * l.quantity, 0)
+  const count = items.reduce((c, l) => c + l.quantity, 0)
 
   return {
     items,
     total,
     count,
-    addToCart: useCallback(addToCart, []),
-    removeFromCart: useCallback(removeFromCart, []),
-    updateCartQuantity: useCallback(updateCartQuantity, []),
+    addToCart: useCallback(addCartLine, []),
+    removeFromCart: useCallback(removeCartLine, []),
+    updateCartQuantity: useCallback(updateCartLineQuantity, []),
     clearCart: useCallback(clearCart, []),
   }
 }

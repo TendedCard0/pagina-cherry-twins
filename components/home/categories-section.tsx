@@ -1,8 +1,25 @@
-import Image from "next/image"
 import Link from "next/link"
-import { categories } from "@/lib/data"
+import { listCategories } from "@/lib/catalog-api"
 
-export function CategoriesSection() {
+function hueFromSlug(slug: string): number {
+  let h = 0
+  for (let i = 0; i < slug.length; i++) h = (h * 31 + slug.charCodeAt(i)) % 360
+  return h
+}
+
+export async function CategoriesSection() {
+  let categories: Awaited<ReturnType<typeof listCategories>> = []
+  try {
+    categories = await listCategories()
+  } catch {
+    categories = []
+  }
+
+  const byId = new Map(categories.map((c) => [c.id, c]))
+  const display = [...categories].sort((a, b) =>
+    a.name.localeCompare(b.name, "es", { sensitivity: "base" })
+  )
+
   return (
     <section className="mx-auto max-w-7xl px-4 py-20 lg:px-8">
       <div className="mb-10">
@@ -13,28 +30,37 @@ export function CategoriesSection() {
           Explora por estilo
         </h2>
       </div>
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 lg:gap-6">
-        {categories.map((cat) => (
-          <Link
-            key={cat.slug}
-            href={`/shop?category=${cat.slug}`}
-            className="group relative aspect-[4/5] overflow-hidden rounded-lg"
-          >
-            <Image
-              src={cat.image}
-              alt={cat.name}
-              fill
-              className="object-cover transition-transform duration-500 group-hover:scale-105"
-              sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
-            />
-            <div className="absolute inset-0 bg-background/50 transition-colors group-hover:bg-background/40" />
-            <div className="relative z-10 flex h-full flex-col items-start justify-end p-6">
-              <h3 className="text-xl font-bold text-foreground">{cat.name}</h3>
-              <p className="mt-1 text-sm text-muted-foreground">{cat.count} productos</p>
-            </div>
-          </Link>
-        ))}
-      </div>
+      {display.length === 0 ? (
+        <p className="text-sm text-muted-foreground">
+          No hay categorías en la base de datos.
+        </p>
+      ) : (
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 lg:gap-6">
+          {display.map((cat) => {
+            const hue = hueFromSlug(cat.slug)
+            const subtitle =
+              cat.parentId != null && byId.has(cat.parentId)
+                ? `Dentro de ${byId.get(cat.parentId)!.name}`
+                : "Ver productos"
+            return (
+              <Link
+                key={cat.id}
+                href={`/shop?category=${encodeURIComponent(cat.slug)}`}
+                className="group relative flex aspect-[4/5] flex-col justify-end overflow-hidden rounded-lg p-6"
+                style={{
+                  background: `linear-gradient(145deg, hsl(${hue} 45% 18%) 0%, hsl(${hue} 35% 8%) 100%)`,
+                }}
+              >
+                <div className="absolute inset-0 bg-background/40 transition-colors group-hover:bg-background/25" />
+                <div className="relative z-10">
+                  <h3 className="text-xl font-bold text-foreground">{cat.name}</h3>
+                  <p className="mt-1 text-sm text-muted-foreground">{subtitle}</p>
+                </div>
+              </Link>
+            )
+          })}
+        </div>
+      )}
     </section>
   )
 }

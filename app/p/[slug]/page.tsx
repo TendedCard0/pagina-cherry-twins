@@ -1,26 +1,33 @@
 import { notFound } from "next/navigation"
-import { getProductBySlug, products } from "@/lib/data"
+import { getProductBySlug, listPublicReviews, listRelatedProducts } from "@/lib/catalog-api"
 import { ProductDetail } from "@/components/product/product-detail"
-
-export function generateStaticParams() {
-  return products.map((p) => ({ slug: p.slug }))
-}
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params
-  const product = getProductBySlug(slug)
-  if (!product) return { title: "Producto no encontrado" }
-  return {
-    title: `${product.name} | Cherry Twins`,
-    description: product.description,
+  try {
+    const product = await getProductBySlug(slug)
+    return {
+      title: `${product.name} | Cherry Twins`,
+      description: product.description?.slice(0, 160) || product.name,
+    }
+  } catch {
+    return { title: "Producto no encontrado" }
   }
 }
 
 export default async function ProductPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params
-  const product = getProductBySlug(slug)
+  let product
+  try {
+    product = await getProductBySlug(slug)
+  } catch {
+    notFound()
+  }
 
-  if (!product) notFound()
+  const [reviews, related] = await Promise.all([
+    listPublicReviews(product.id).catch(() => []),
+    listRelatedProducts(product.category?.slug, product.slug, 8).catch(() => []),
+  ])
 
-  return <ProductDetail product={product} />
+  return <ProductDetail product={product} reviews={reviews} related={related} />
 }

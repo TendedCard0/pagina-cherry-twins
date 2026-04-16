@@ -10,11 +10,11 @@ import { Badge } from "@/components/ui/badge"
 import { useCart } from "@/lib/cart-store"
 
 const navLinks = [
-  { label: "Tienda", href: "/shop" },
-  { label: "Colecciones", href: "/shop?category=all" },
-  { label: "Sobre", href: "/#about" },
-  { label: "FAQ", href: "/#faq" },
-]
+  { id: "nav-shop", label: "Tienda", href: "/shop" },
+  { id: "nav-collections", label: "Colecciones", href: "/shop" },
+  { id: "nav-about", label: "Sobre", href: "/#about" },
+  { id: "nav-faq", label: "FAQ", href: "/#faq" },
+] as const
 
 export function SiteHeader() {
   const [searchOpen, setSearchOpen] = useState(false)
@@ -36,7 +36,7 @@ export function SiteHeader() {
               <nav className="flex flex-col gap-6 pt-8">
                 {navLinks.map((link) => (
                   <Link
-                    key={link.href}
+                    key={link.id}
                     href={link.href}
                     className="text-lg font-medium text-foreground transition-colors hover:text-primary"
                   >
@@ -60,7 +60,7 @@ export function SiteHeader() {
         <nav className="hidden lg:flex lg:items-center lg:gap-8">
           {navLinks.map((link) => (
             <Link
-              key={link.href}
+              key={link.id}
               href={link.href}
               className="text-sm font-medium uppercase tracking-widest text-muted-foreground transition-colors hover:text-foreground"
             >

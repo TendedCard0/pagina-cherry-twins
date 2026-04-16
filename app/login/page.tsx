@@ -1,3 +1,4 @@
+import { Suspense } from "react"
 import { AuthShell } from "@/components/auth/auth-shell"
 import { LoginForm } from "@/components/auth/login-form"
 
@@ -7,7 +8,9 @@ export default function LoginPage() {
       title="Iniciar sesión"
       subtitle="Accede a tu cuenta Cherry Twins"
     >
-      <LoginForm />
+      <Suspense fallback={<p className="text-sm text-neutral-400">Cargando…</p>}>
+        <LoginForm />
+      </Suspense>
     </AuthShell>
   )
 }

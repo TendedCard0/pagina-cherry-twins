@@ -1,10 +1,24 @@
 import { getAuthSession } from "@/lib/auth-storage"
+import { API_BASE_URL } from "@/lib/api-config"
 
-export const API_BASE_URL = "https://store-cherrys.onrender.com"
+export { API_BASE_URL }
 
 type ApiFetchOptions = RequestInit & {
   requireAuth?: boolean
 }
+
+/** JWT debe ir como `Bearer <token>`; el backend compara el prefijo de forma estricta. */
+function authorizationHeader(session: { token: string; tokenType: string }): string {
+  let raw = session.token.trim()
+  if (/^bearer\s+/i.test(raw)) {
+    raw = raw.replace(/^bearer\s+/i, "").trim()
+  }
+  const t = session.tokenType.trim()
+  const scheme = t.toLowerCase() === "bearer" ? "Bearer" : t
+  return `${scheme} ${raw}`
+}
+
+type ErrorBody = { message?: unknown; fields?: Record<string, string> }
 
 export async function apiFetch<T>(
   endpoint: string,
@@ -24,7 +38,7 @@ export async function apiFetch<T>(
       throw new Error("No hay sesión activa")
     }
 
-    headers.set("Authorization", `${session.tokenType} ${session.token}`)
+    headers.set("Authorization", authorizationHeader(session))
   }
 
   const response = await fetch(`${API_BASE_URL}${endpoint}`, {
@@ -44,13 +58,18 @@ export async function apiFetch<T>(
   }
 
   if (!response.ok) {
-    const message =
-      typeof data === "object" &&
-      data !== null &&
-      "message" in data &&
-      typeof (data as { message?: unknown }).message === "string"
-        ? (data as { message: string }).message
+    const body = typeof data === "object" && data !== null ? (data as ErrorBody) : null
+    let message =
+      body && typeof body.message === "string" && body.message.trim()
+        ? body.message
         : `Error ${response.status}`
+
+    if (response.status === 401 || response.status === 403) {
+      if (!body?.message || body.message === "Validation error") {
+        message =
+          "No autorizado (sesión inválida o expirada). Cierra sesión y vuelve a entrar."
+      }
+    }
 
     throw new Error(message)
   }

@@ -1,8 +1,14 @@
-import { getNewProducts } from "@/lib/data"
+import { listProducts } from "@/lib/catalog-api"
 import { ProductCard } from "@/components/product-card"
 
-export function NewDrops() {
-  const newProducts = getNewProducts()
+export async function NewDrops() {
+  let items: Awaited<ReturnType<typeof listProducts>>["content"] = []
+  try {
+    const page = await listProducts({ page: 0, size: 8, sort: "createdAt_desc" })
+    items = page.content
+  } catch {
+    items = []
+  }
 
   return (
     <section className="mx-auto max-w-7xl px-4 py-20 lg:px-8">
@@ -14,13 +20,19 @@ export function NewDrops() {
           Drop Reciente
         </h2>
       </div>
-      <div className="flex gap-4 overflow-x-auto pb-4 lg:gap-6 scrollbar-hide">
-        {newProducts.map((product) => (
-          <div key={product.id} className="min-w-[250px] flex-shrink-0 md:min-w-[280px]">
-            <ProductCard product={product} />
-          </div>
-        ))}
-      </div>
+      {items.length === 0 ? (
+        <p className="text-sm text-muted-foreground">
+          Sin productos recientes desde la API.
+        </p>
+      ) : (
+        <div className="flex gap-4 overflow-x-auto pb-4 lg:gap-6 scrollbar-hide">
+          {items.map((product) => (
+            <div key={product.id} className="min-w-[250px] flex-shrink-0 md:min-w-[280px]">
+              <ProductCard product={product} />
+            </div>
+          ))}
+        </div>
+      )}
     </section>
   )
 }

@@ -1,9 +1,15 @@
-import { getFeaturedProducts } from "@/lib/data"
-import { ProductCard } from "@/components/product-card"
 import Link from "next/link"
+import { listProducts } from "@/lib/catalog-api"
+import { ProductCard } from "@/components/product-card"
 
-export function FeaturedProducts() {
-  const featured = getFeaturedProducts()
+export async function FeaturedProducts() {
+  let items: Awaited<ReturnType<typeof listProducts>>["content"] = []
+  try {
+    const page = await listProducts({ page: 0, size: 8, sort: "createdAt_desc" })
+    items = page.content
+  } catch {
+    items = []
+  }
 
   return (
     <section className="mx-auto max-w-7xl px-4 py-20 lg:px-8">
@@ -23,11 +29,18 @@ export function FeaturedProducts() {
           Ver todo
         </Link>
       </div>
-      <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4 lg:gap-6">
-        {featured.map((product) => (
-          <ProductCard key={product.id} product={product} />
-        ))}
-      </div>
+      {items.length === 0 ? (
+        <p className="text-sm text-muted-foreground">
+          No hay productos en la base de datos o la API no responde en el servidor (revisa la consola del backend y{" "}
+          <code className="text-xs">NEXT_PUBLIC_API_URL</code>).
+        </p>
+      ) : (
+        <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4 lg:gap-6">
+          {items.map((product) => (
+            <ProductCard key={product.id} product={product} />
+          ))}
+        </div>
+      )}
     </section>
   )
 }

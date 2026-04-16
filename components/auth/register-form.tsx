@@ -1,17 +1,17 @@
 "use client"
 
 import Link from "next/link"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { useState } from "react"
 import { useAuth } from "@/context/auth-context"
-
-type AuthResponse = {
-  token: string
-  tokenType: string
-}
+import { postAuthJson } from "@/lib/auth-client"
+import { API_BASE_URL } from "@/lib/api-config"
+import { safeReturnPath } from "@/lib/safe-return-path"
 
 export function RegisterForm() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const returnTo = safeReturnPath(searchParams.get("returnTo"))
   const { completeAuth } = useAuth()
 
   const [fullName, setFullName] = useState("")
@@ -34,40 +34,38 @@ export function RegisterForm() {
     try {
       setLoading(true)
 
-      const res = await fetch("https://store-cherrys.onrender.com/api/auth/register", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          email,
-          password,
-          fullName,
-          phone,
-        }),
+      const result = await postAuthJson("/api/auth/register", {
+        email,
+        password,
+        fullName,
+        phone,
       })
 
-      const data = (await res.json()) as Partial<AuthResponse> & { message?: string }
-
-      if (!res.ok) {
-        setError(data.message || "Error al registrar usuario.")
+      if (!result.ok) {
+        setError(result.message)
         return
       }
 
-      if (!data.token) {
-        setError("La API no devolvió un token válido.")
+      try {
+        await completeAuth({
+          token: result.data.token,
+          tokenType: result.data.tokenType || "Bearer",
+        })
+      } catch (profileErr) {
+        const msg =
+          profileErr instanceof Error
+            ? profileErr.message
+            : "No se pudo cargar tu perfil."
+        setError(`${msg} (API: ${API_BASE_URL})`)
         return
       }
 
-      await completeAuth({
-        token: data.token,
-        tokenType: data.tokenType || "Bearer",
-      })
-
-      router.push("/account")
+      router.push(returnTo)
     } catch (err) {
       console.error("Register error:", err)
-      setError("No se pudo registrar el usuario.")
+      setError(
+        err instanceof Error ? err.message : "No se pudo registrar el usuario."
+      )
     } finally {
       setLoading(false)
     }
@@ -75,6 +73,9 @@ export function RegisterForm() {
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+      <p className="text-xs text-neutral-500">
+        Conectado a: <span className="font-mono text-neutral-400">{API_BASE_URL}</span>
+      </p>
       <input
         type="text"
         placeholder="Nombre completo"
@@ -126,13 +127,13 @@ export function RegisterForm() {
         disabled={loading}
         className="bg-white text-black font-semibold p-3 rounded hover:opacity-90 disabled:opacity-60"
       >
-        {loading ? "Creando cuenta..." : "Crear cuenta"}
+        {loading ? "Creando cuenta..." : "Registrarse"}
       </button>
 
       <p className="text-sm text-neutral-400 text-center">
         ¿Ya tienes cuenta?{" "}
-        <Link href="/login" className="text-white underline">
-          Inicia sesión
+        <Link href={`/login?returnTo=${encodeURIComponent(returnTo)}`} className="text-white underline">
+          Iniciar sesión
         </Link>
       </p>
     </form>
