@@ -441,13 +441,7 @@ export function AccountContent() {
                 <h2 className="mb-5 text-2xl font-semibold">Estado</h2>
 
                 <div className="space-y-4">
-                  <div>
-                    <p className="text-sm text-neutral-400">Rol</p>
-                    <p className="mt-1 inline-flex rounded-full border border-neutral-700 px-3 py-1 text-sm">
-                      {user.role}
-                    </p>
-                  </div>
-
+                  
                   <div>
                     <p className="text-sm text-neutral-400">Cuenta activa</p>
                     <p className="mt-1">
