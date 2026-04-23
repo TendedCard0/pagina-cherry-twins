@@ -53,7 +53,8 @@ npm run dev
 ```
 (Solo haces `npm install` una vez o cuando cambien dependencias)
 
----------------------Iniciar base de latos en local-----------------------------
+##Iniciar base de latos en local
+
 #Configuración de Base de Datos
 export SPRING_DATASOURCE_URL=jdbc:postgresql://localhost:5432/Cherry_Twins
 export SPRING_DATASOURCE_USERNAME=postgres
